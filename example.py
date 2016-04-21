@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
+import keystoneclient.v3.credentials 
+import logging
+import novaclient.v1_1.client as nvclient
 import os
 import time
-import novaclient.v1_1.client as nvclient
-import keystoneclient.v3.credentials  
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 def get_nova_creds():
     d = {}
@@ -16,8 +19,9 @@ def get_nova_creds():
 creds = get_nova_creds()
 nova = nvclient.Client(**creds)
 
+logging.info('Managing ssh keys')
 if not nova.keypairs.findall(name="achbal"):
-    with open(os.path.expanduser('~/.ssh/id_rsa.pub')) as fpubkey:
+    with open(os.path.expanduser('~/.ssh/achbal-id_rsa.pub')) as fpubkey:
         nova.keypairs.create(name="achbal", public_key=fpubkey.read())
 image = nova.images.find(name="CentOS 7")
 flavor = nova.flavors.find(name="c1.medium")
@@ -25,8 +29,8 @@ flavor = nova.flavors.find(name="c1.medium")
 # nics = [{'079bde3e-af21-4b9b-a934-b3286fdc9d07': net.id}]
 
 for RUN in range(1,2):
-    print("Creating VM%d" % RUN) 
-    instance = nova.servers.create(name="test", image=image, flavor=flavor, key_name="achbal") 
+    logging.info("Creating VM%d" % RUN)
+    instance = nova.servers.create(name="test", image=image, flavor=flavor, key_name="achbal")
     # Poll at 5 second intervals, until the status is no longer 'BUILD'
     status = instance.status
     while status == 'BUILD':
