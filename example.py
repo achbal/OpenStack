@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import keystoneclient.v3.credentials 
+import keystoneclient.v3.credentials
 import logging
 import novaclient.v1_1.client as nvclient
 import os,sys
@@ -20,26 +20,24 @@ def get_nova_creds():
 creds = get_nova_creds()
 nova = nvclient.Client(**creds)
 
+key = creds['username']+"-qserv"
+
 logging.info('Manage ssh keys')
-
-if nova.keypairs.findall(name="achbal"):
+if nova.keypairs.findall(name=key):
     logging.debug('Remove previous ssh keys')
-    nova.keypairs.delete(key="achbal")
+    nova.keypairs.delete(key=key)
 
-with open(os.path.expanduser('~/.ssh/achbal-id_rsa.pub')) as fpubkey:
-    nova.keypairs.create(name="achbal", public_key=fpubkey.read())
+with open(os.path.expanduser('~/.ssh/id_rsa.pub')) as fpubkey:
+    nova.keypairs.create(name=key, public_key=fpubkey.read())
 image = nova.images.find(name="CentOS 7")
 flavor = nova.flavors.find(name="c1.medium")
 #net = nova.networks.find(label="public")
 #nics = [{'079bde3e-af21-4b9b-a934-b3286fdc9d07': net.id}]
 
 for i in range(0,2):
-    logging.info("Create VM%02d" % i)
-    NAMEIMG = creds['username']+"-qserv-"+str(i) 
-    KEY = "achbal"
-     print "XXXXXXXXXXXXXXXXXXXX %s" %NAMEIMG 
-     sys.exit(0)
-    instance = nova.servers.create(name=NAMEIMG, image=image, flavor=flavor, key_name=KEY)
+    img_name = creds['username']+"-qserv-"+str(i)
+    logging.info("Create image %s" % img_name)
+    instance = nova.servers.create(name=img_name, image=image, flavor=flavor, key_name=key)
     # Poll at 5 second intervals, until the status is no longer 'BUILD'
     status = instance.status
     while status == 'BUILD':
@@ -48,5 +46,5 @@ for i in range(0,2):
         instance = nova.servers.get(instance.id)
         status = instance.status
     logging.info ("status: %s" % status)
-    logging.info ("VM%02d is active"% i)
+    logging.info ("image is active %s" % img_name)
 logging.info("Execution Completed")
