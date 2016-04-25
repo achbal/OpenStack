@@ -1,0 +1,4 @@
+Host 192.168.56.*
+User centos
+ProxyCommand ssh -W %h:%p centos@193.55.95.221
+IdentityFile ~/.ssh/id_rsa
