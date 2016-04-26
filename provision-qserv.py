@@ -72,7 +72,8 @@ for i in range(1,3):
 # GET FLOATING IP AND ADD IT TO GW
 
 # Check for available public ip in project
-# >>> for ip in nova.floating_ips.list():                                                                                                                                                                           #...     print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
+for ip in nova.floating_ips.list():
+    print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
 
 # Check for available public ip in ext-net pool
 floating_ip_pool = nova.floating_ip_pools.list()[0].name
