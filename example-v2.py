@@ -73,14 +73,17 @@ def get_floating_ip():
     i=0
     # Check for available public ip in project
     for ip in nova.floating_ips.list():
-        print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
+        #print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
 	while  ip.instance_id!=None and i<len(nova.floating_ips.list()):
 	    i = i+1
-	if ip.instance_id==None:
-            floating_ip=ip.ip
-            instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
-            instance.add_floating_ip(floating_ip)
-        else:
+            if ip.instance_id==None:
+                floating_ip=ip.ip
+                print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id) 
+                print "floating_id: {} ".format(floating_id)
+
+                instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
+                instance.add_floating_ip(floating_ip)
+        if not True: 
             # Check for available public ip in ext-net pool
             floating_ip_pool = nova.floating_ip_pools.list()[0].name
             logging.debug("Use floating ip pool: {}".format(floating_ip_pool))
@@ -102,7 +105,7 @@ def terminate_instance(vm_name):
     server = nova.servers.find(name=vm_name)
     server.delete()
 
-def change_sec_grp()
+def change_sec_grp():
     """
     Allow port 22 and ICMP in the default security group
     """  
@@ -110,12 +113,15 @@ def change_sec_grp()
     nova.security_group_rules.create(secgroup.id, ip_protocol="tcp", from_port=22, to_port=22)
     nova.security_group_rules.create(secgroup.id, ip_protocol="icmp", from_port=-1, to_port=-1)
 
+
 if __name__ == "__main__":
     try:
         VERSION=2.4
+        
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
         # Disable warnings
         warnings.filterwarnings("ignore")
+        
         creds = get_nova_creds()
         nova = client.Client(VERSION, **creds)
         # MANAGE SSH KEY
@@ -134,7 +140,7 @@ if __name__ == "__main__":
         for i in range(1,3):
             boot_instance(i)
         # Get floating ip and add it to GW
-        # get_floating_ip()
+        get_floating_ip()
     except Exception as exc:
         logging.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
