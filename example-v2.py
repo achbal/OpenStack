@@ -102,6 +102,14 @@ def terminate_instance(vm_name):
     server = nova.servers.find(name=vm_name)
     server.delete()
 
+def change_sec_grp()
+    """
+    Allow port 22 and ICMP in the default security group
+    """  
+    secgroup = nova.security_groups.find(name="default")
+    nova.security_group_rules.create(secgroup.id, ip_protocol="tcp", from_port=22, to_port=22)
+    nova.security_group_rules.create(secgroup.id, ip_protocol="icmp", from_port=-1, to_port=-1)
+
 if __name__ == "__main__":
     try:
         VERSION=2.4
