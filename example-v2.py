@@ -70,11 +70,14 @@ def get_floating_ip():
     """
     Get floating ip and add it to GW
     """
+    i=0
     # Check for available public ip in project
     for ip in nova.floating_ips.list():
         print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
-	if  ip.instance_id==None:
-            # floating_ip=ip.ip
+	while  ip.instance_id!=None and i<len(nova.floating_ips.list()):
+	    i = i+1
+	if ip.instance_id==None:
+            floating_ip=ip.ip
             instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
             instance.add_floating_ip(floating_ip)
         else:
@@ -86,38 +89,44 @@ def get_floating_ip():
             except novaclient.exceptions.Forbidden as e:
                 logging.fatal("Unable to retrieve public IP: {}".format(e))
                 sys.exit(1)
-        logging.info("create a floating ip adress {}".format(floating_ip))
-        instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
-        instance.add_floating_ip(floating_ip)
+            logging.info("create a floating ip adress {}".format(floating_ip))
+            instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
+            instance.add_floating_ip(floating_ip)
 
     logging.info("Execution Completed")
 
+def terminate_instance(vm_name):
+    """
+    Retrieve an instance by name and shut it down
+    """	
+    server = nova.servers.find(name=vm_name)
+    server.delete()
 
 if __name__ == "__main__":
     try:
-	VERSION=2.4
-	logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-	# Disable warnings
-	warnings.filterwarnings("ignore")
-	creds = get_nova_creds()
+        VERSION=2.4
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+        # Disable warnings
+        warnings.filterwarnings("ignore")
+        creds = get_nova_creds()
         nova = client.Client(VERSION, **creds)
-	GW_id = 0
         # MANAGE SSH KEY
-	key = "{}-qserv".format(creds['username'])
-	manage_ssh_key()
+        key = "{}-qserv".format(creds['username'])
+        manage_ssh_key()
         # Find an image and a flavor to launch an instance
-	image = nova.images.find(name="CentOS 7")
+        image = nova.images.find(name="CentOS 7")
         flavor = nova.flavors.find(name="c1.medium")
-	# net = nova.networks.find(label="public")
-       	# nics = [{'079bde3e-af21-4b9b-a934-b3286fdc9d07': net.id}]
-	
-	# Boot a new instance as GW
+        # net = nova.networks.find(label="public")
+        # nics = [{'079bde3e-af21-4b9b-a934-b3286fdc9d07': net.id}]
+ 
+        # Boot a new instance as GW
+        GW_id=0
         boot_instance(GW_id)
-     	# Boot instances as workers
-	for i in range(1,3):
+        # Boot instances as workers
+        for i in range(1,3):
             boot_instance(i)
-	# Get floating ip and add it to GW
-        get_floating_ip()
+        # Get floating ip and add it to GW
+        # get_floating_ip()
     except Exception as exc:
         logging.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
