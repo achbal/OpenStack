@@ -36,9 +36,9 @@ def get_nova_creds():
     logging.debug("Openstack user: {}".format(d['username']))
     return d
 
-def boot_instance(instance_id):
+def create_instance(instance_id):
     """
-    Booting an instance and checking status
+    Booting an instance from an image and checking status
     """
     instance_name = "{0}-qserv-{1}".format(creds['username'], instance_id)
     logging.info("Launch an instance {}".format(instance_name))
@@ -53,6 +53,8 @@ def boot_instance(instance_id):
     logging.info ("status: {}".format(status))
     logging.info ("Instance {} is active".format(instance_name))
     print "======================================"
+
+    return instance
 
 def manage_ssh_key():
     """
@@ -72,31 +74,24 @@ def get_floating_ip():
     """
     i=0
     # Check for available public ip in project
-    for ip in nova.floating_ips.list():
-        #print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id)
-	while  ip.instance_id!=None and i<len(nova.floating_ips.list()):
-	    i = i+1
-            if ip.instance_id==None:
-                floating_ip=ip.ip
-                print "ip: {0}, instance_id: {1} ".format(ip.ip, ip.instance_id) 
-                print "floating_id: {} ".format(floating_id)
+    floating_ips = nova.floating_ips.list()
+    is_available = False
+    floating_ip = None
 
-                instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
-                instance.add_floating_ip(floating_ip)
-        if not True: 
-            # Check for available public ip in ext-net pool
-            floating_ip_pool = nova.floating_ip_pools.list()[0].name
-            logging.debug("Use floating ip pool: {}".format(floating_ip_pool))
-            try:
-                floating_ip = nova.floating_ips.create(floating_ip_pool)
-            except novaclient.exceptions.Forbidden as e:
-                logging.fatal("Unable to retrieve public IP: {}".format(e))
-                sys.exit(1)
-            logging.info("create a floating ip adress {}".format(floating_ip))
-            instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], GW_id))
-            instance.add_floating_ip(floating_ip)
+    logging.debug('iXXXXXXXXXXXXXXX Avaible floating ip found {}'.format(floating_ip))
+    while i<len(floating_ips) and not is_available:
+        if floating_ips[i].instance_id is None:
+            floating_ip=floating_ips[i]
+            is_available=True
+            logging.debug('Avaible floating ip found {}'.format(floating_ip))
+        i+=1
 
-    logging.info("Execution Completed")
+    return floating_ip
+
+def add_floating_ip_GW(floating_ip,gateway_id):
+    #logging.info("create a floating ip adress {}".format(floating_ip))
+    instance = nova.servers.find(name="{0}-qserv-{1}".format(creds['username'], gateway_id))
+    instance.add_floating_ip(floating_ip)
 
 def terminate_instance(vm_name):
     """
@@ -118,7 +113,7 @@ if __name__ == "__main__":
     try:
         VERSION=2.4
         
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
         # Disable warnings
         warnings.filterwarnings("ignore")
         
@@ -134,13 +129,17 @@ if __name__ == "__main__":
         # nics = [{'079bde3e-af21-4b9b-a934-b3286fdc9d07': net.id}]
  
         # Boot a new instance as GW
-        GW_id=0
-        boot_instance(GW_id)
+        gateway_id=0
+        instance = create_instance(gateway_id)
         # Boot instances as workers
-        for i in range(1,3):
-            boot_instance(i)
-        # Get floating ip and add it to GW
-        get_floating_ip()
+        #for i in range(1,3):
+        #    create_instance(i)
+        # Get floating ip and add it to gateway
+        floating_ip = get_floating_ip()
+
+	if floating_ip:
+            add_floating_ip_GW(floating_ip,gateway_id)
+
     except Exception as exc:
         logging.critical('Exception occured: %s', exc, exc_info=True)
         sys.exit(1)
