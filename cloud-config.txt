@@ -1,0 +1,21 @@
+#cloud-config
+id_rsa_pub=$(cat ~/.ssh/id_rsa.pub)
+users:
+  - default
+  - name: demo
+    groups: sudo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock-passwd: true
+    ssh-authorized-keys:
+      - $id_rsa_pub
+runcmd:
+  - touch /tmp/test.txt
+packages:
+  - docker
+  - epel-release
+  - nss-mdns
+manage_etc_hosts: true
+package_upgrade: true
+package_reboot_if_required: true
+timezone: Europe/Paris
