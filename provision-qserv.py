@@ -56,6 +56,7 @@ def nova_servers_create(instance_id):
     # cloud config
     fic = open("cloud-config.txt", "r")
     userdata = fic.read()
+    fic.close()
 
     # Launch an instance from an image
     instance = nova.servers.create(name=instance_name, image=image,
@@ -68,30 +69,7 @@ def nova_servers_create(instance_id):
         status = instance.status
     logging.info ("status: {}".format(status))
     logging.info ("Instance {} is active".format(instance_name))
-    
-    print "XXXXXXXXXXXXXXXXXX"
-    #print instance.to_dict()
-    print"yyyyyyyyyyyyyyyyyyy{}".format(instance.to_dict()['name'])
 
-    # ssh config
-    ssh_config_tpl='''
-
-Host {host}
-HostName {fixed_ip}
-User centos
-ProxyCommand ssh -W %h:%p centos@{floating_ip}
-IdentityFile ~/.ssh/id_rsa
-'''
-
-    ssh_config_extract = ssh_config_tpl.format(host=instance.name, fixed_ip=instance.networks, floating_ip=floating_ip)
-    
-    f = open("ssh_config", "w")
-    f.write(ssh_config_extract)
-    print f 
-    
-    print "======================================"
-    f.close()
-    fic.close()
     return instance
 
 def manage_ssh_key():
@@ -140,72 +118,78 @@ def terminate_instance(vm_name):
     server = nova.servers.find(name=vm_name)
     server.delete()
 
-def main():
-    logging.basicConfig(format='%(levelname)s:%(message)s',level=logging.DEBUG)
-    # Disable warnings
-    warnings.filterwarnings("ignore")
-    creds = get_nova_creds()
-    nova = client.Client(**creds)
-    # MANAGE SSH KEY
-    key = "{}-qserv".format(creds['username'])
-    manage_ssh_key()
-    # Find a floating ip to gateway
-    floating_ip = get_floating_ip()
-    if not floating_ip:
-        logging.fatal("Unable to add public ip to Qserv gateway")
-        sys.exit(2)
-    # Find an image and a flavor to launch an instance
-    image = nova.images.find(name="CentOS 7")
-    flavor = nova.flavors.find(name="c1.medium")
-    # Create a new instance as GW and add floating_ip to it
-    gateway_id=0
-    gateway_instance = nova_servers_create(gateway_id)
-    logging.info("Add floating ip({}) to gateway".format(floating_ip))
-    gateway_instance.add_floating_ip(floating_ip)
-    # Create instances as workers
-    #for instance_id in range(1,3):
-    #    worker_instance = nova_servers_create(instance_id)
+def print_ssh_config(instances, floating_ip):
+    """
+    Print ssh client configuration to file
+    """
 
-def provision_cluster():
-        """
-            Provision Qserv infrastructure
-                """
+    # ssh config
+    ssh_config_tpl = '''
 
+    Host {host}
+    HostName {fixed_ip}
+    User centos
+    ProxyCommand ssh -W %h:%p centos@{floating_ip}
+    IdentityFile ~/.ssh/id_rsa
+    '''
+
+    ssh_config_extract = ""
+    for instance in instances:
+        fixed_ip = instance.networks['petasky-net']
+        ssh_config_extract += ssh_config_tpl.format(host=instance.name,
+                                                    fixed_ip=fixed_ip,
+                                                    floating_ip=floating_ip)
+
+    logging.debug("SSH client config: ")
+
+    f = open("ssh_config", "w")
+    f.write(ssh_config_extract)
+    f.close()
 
 
 if __name__ == "__main__":
     try:
-        logging.basicConfig(format='%(levelname)s:%(message)s',level=logging.DEBUG)
-        
+        logging.basicConfig(format='%(asctime)s %(levelname)-8s %(name)-15s %(message)s',level=logging.DEBUG)
+
         # Disable warnings
         warnings.filterwarnings("ignore")
-        
+
         creds = get_nova_creds()
         nova = client.Client(**creds)
-        
-        # MANAGE SSH KEY
+
+        # Manage ssh keys
         key = "{}-qserv".format(creds['username'])
         manage_ssh_key()
-        
-        # Find a floating ip to gateway
+
+        # Find a floating ip for gateway
         floating_ip = get_floating_ip()
         if not floating_ip:
             logging.fatal("Unable to add public ip to Qserv gateway")
             sys.exit(2)
-        
+
         # Find an image and a flavor to launch an instance
         image = nova.images.find(name="CentOS 7")
         flavor = nova.flavors.find(name="c1.medium")
-        
+
+        instances = []
+
         # Create a new instance as GW and add floating_ip to it
-        gateway_id=0
+        gateway_id = 0
         gateway_instance = nova_servers_create(gateway_id)
         logging.info("Add floating ip({}) to gateway".format(floating_ip))
         gateway_instance.add_floating_ip(floating_ip)
-        
-        # Create instances as workers
-        #for instance_id in range(1,3):
-        #    worker_instance = nova_servers_create(instance_id)
+
+        instances.append(gateway_instance)
+
+        # Create worker instances
+        for instance_id in range(1,3):
+            worker_instance = nova_servers_create(instance_id)
+            instances.append(worker_instance)
+
+        print_ssh_config(instances, floating_ip)
+
+        for instance in instances:
+            terminate_instance(instance.name)
 
     except Exception as exc:
         logging.critical('Exception occured: %s', exc, exc_info=True)
