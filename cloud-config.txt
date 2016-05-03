@@ -2,7 +2,7 @@
 id_rsa_pub=$(cat ~/.ssh/id_rsa.pub)
 users:
   - default
-  - name: demo
+  - name: qserv
     groups: sudo
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
