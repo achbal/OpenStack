@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
         instances = []
 
-        # Create a new instance as GW and add floating_ip to it
+        # Create gateway instance and add floating_ip to it
         gateway_id = 0
         gateway_instance = nova_servers_create(gateway_id)
         logging.info("Add floating ip({}) to gateway".format(floating_ip))
@@ -185,7 +185,8 @@ if __name__ == "__main__":
         for instance_id in range(1,3):
             worker_instance = nova_servers_create(instance_id)
             instances.append(worker_instance)
-
+        
+        # Show ssh client config
         print_ssh_config(instances, floating_ip)
 
         for instance in instances:
