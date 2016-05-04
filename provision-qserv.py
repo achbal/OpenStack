@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Boot instances in 
+Boot instances in
 
 Script performs these tasks:
 - launch instances from image and manage ssh key
@@ -111,7 +111,7 @@ def get_floating_ip():
 
     return floating_ip
 
-def terminate_instance(vm_name):
+def nova_servers_delete(vm_name):
     """
     Retrieve an instance by name and shut it down
     """
@@ -150,7 +150,8 @@ def print_ssh_config(instances, floating_ip):
 if __name__ == "__main__":
     try:
         logging.basicConfig(format='%(asctime)s %(levelname)-8s %(name)-15s %(message)s',level=logging.DEBUG)
-
+        # Disable a non root logger
+        logging.getLogger("requests").setLevel(logging.ERROR)
         # Disable warnings
         warnings.filterwarnings("ignore")
 
@@ -185,12 +186,12 @@ if __name__ == "__main__":
         for instance_id in range(1,3):
             worker_instance = nova_servers_create(instance_id)
             instances.append(worker_instance)
-        
+
         # Show ssh client config
         print_ssh_config(instances, floating_ip)
 
-        for instance in instances:
-            terminate_instance(instance.name)
+        #for instance in instances:
+        #    nova_servers_delete(instance.name)
 
     except Exception as exc:
         logging.critical('Exception occured: %s', exc, exc_info=True)
