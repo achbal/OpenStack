@@ -69,6 +69,7 @@ def nova_servers_create(instance_id):
         status = instance.status
     logging.info ("status: {}".format(status))
     logging.info ("Instance {} is active".format(instance_name))
+    print "====================================="
 
     return instance
 
@@ -138,7 +139,7 @@ def print_ssh_config(instances, floating_ip):
         fixed_ip = instance.networks['petasky-net']
         ssh_config_extract += ssh_config_tpl.format(host=instance.name,
                                                     fixed_ip=fixed_ip,
-                                                    floating_ip=floating_ip)
+                                                    floating_ip=floating_ip.ip)
 
     logging.debug("SSH client config: ")
 
@@ -150,8 +151,10 @@ def print_ssh_config(instances, floating_ip):
 if __name__ == "__main__":
     try:
         logging.basicConfig(format='%(asctime)s %(levelname)-8s %(name)-15s %(message)s',level=logging.DEBUG)
+
         # Disable a non root logger
         logging.getLogger("requests").setLevel(logging.ERROR)
+
         # Disable warnings
         warnings.filterwarnings("ignore")
 
@@ -177,8 +180,10 @@ if __name__ == "__main__":
         # Create gateway instance and add floating_ip to it
         gateway_id = 0
         gateway_instance = nova_servers_create(gateway_id)
-        logging.info("Add floating ip({}) to gateway".format(floating_ip))
+        logging.info("Add floating ip ({0}) to {1}".format(floating_ip,
+            gateway_instance.name))
         gateway_instance.add_floating_ip(floating_ip)
+        print "====================================="
 
         instances.append(gateway_instance)
 
