@@ -1,14 +1,13 @@
 #cloud-config
-id_rsa_pub=$(cat ~/.ssh/id_rsa.pub)
 users:
   - default
   - name: qserv
-    groups: sudo
-    sudo: ALL=(ALL) NOPASSWD:ALL
+    gecos: Qserv daemon
     shell: /bin/bash
     lock-passwd: true
     ssh-authorized-keys:
-      - $id_rsa_pub
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQChB64tMnUrbub+8DEuOdZxx4WpXVpuTh5Iqsk9TTvLKhZKAiRBm+pVY0VyDUVNorAQv342pRXHsn1pSdmHqyK7p1JLNyDgDabQHETp64x3FXKVvohW9sHuKzusKq9MmpkoTnqQJ1ztAl5P2+ENnS3CPenQJq0a1xc2ZZ5a5ofF6gbLR5e4jUbP7Cygj8lRRYWz7QdtfHXhP1vx7rKB3sJL1b8tt0H3PFilPH1vfhraYbdGKofwdpItQMjlkSyWIyf+JgFKVY5OZhcWOP/fI+uBkz2UuCsFmWehfb2bbUZ5uTplqIAUHlJ1SLgbecGfGv5+pEjXXn6qMgfk/UolgLV6o5eSofU9Va7sXBBCJRmrH2YeiMIefTE/yh5rmGfj6RUVZzhLMhiQpHIZI0tUUhs5pYr43K/LTD8iiORiXRdIAuQ04h0rFJQJFe3RCMK66ZyGA+vDa3xpRtqNR9rdAq5lckIdIRh70l1stCAaPTYWRxgg0wqeYPNbBHxZNjRsdnk6+x0o43C5HAFLrgEK/WFDJ7x4gAghNLcB393ial31aaEaMR7Ca8FYiInDbODW3PYilSsdJ4BHzCvG4tcQM6MmmH8fq1rncCa153FKkctaip/maxuUblUkDH0JscJ1uNsmCLJY2ymKNAfShq1bXQlIkhbPZml5ZnH6bFcwwqfcDw== aaoualid@gmail.com
+
 runcmd:
   - echo 'Hyyyy' > /tmp/test.txt
 packages:
