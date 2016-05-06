@@ -10,7 +10,7 @@ users:
     ssh-authorized-keys:
       - $id_rsa_pub
 runcmd:
-  - touch /tmp/test.txt
+  - echo 'Hyyyy' > /tmp/test.txt
 packages:
   - docker
   - epel-release

@@ -136,7 +136,7 @@ def print_ssh_config(instances, floating_ip):
 
     ssh_config_extract = ""
     for instance in instances:
-        fixed_ip = instance.networks['petasky-net']
+        fixed_ip = instance.networks['petasky-net'][0]
         ssh_config_extract += ssh_config_tpl.format(host=instance.name,
                                                     fixed_ip=fixed_ip,
                                                     floating_ip=floating_ip.ip)
