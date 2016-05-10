@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-Boot instances in
+Boot instances in cluster infrastructure, and use cloud config to create users
+and install packages on virtual machines
 
 Script performs these tasks:
 - launch instances from image and manage ssh key
@@ -74,7 +75,7 @@ def nova_servers_create(instance_id):
 
 def manage_ssh_key():
     """
-    Manage ssh key
+    Upload ssh public key
     """
     logging.info('Manage ssh keys')
     if nova.keypairs.findall(name=key):
@@ -86,7 +87,7 @@ def manage_ssh_key():
 
 def get_floating_ip():
     """
-    Get a floating ip
+    Allocate floating ip to project
     """
     i=0
     floating_ips = nova.floating_ips.list()
@@ -122,7 +123,6 @@ def print_ssh_config(instances, floating_ip):
     """
     Print ssh client configuration to file
     """
-
     # ssh config
     ssh_config_tpl = '''
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
         creds = get_nova_creds()
         nova = client.Client(**creds)
 
-        # Manage ssh keys
+        # Upload ssh public key
         key = "{}-qserv".format(creds['username'])
         manage_ssh_key()
 
@@ -179,7 +179,8 @@ if __name__ == "__main__":
         # Find an image and a flavor to launch an instance
         image = nova.images.find(name="CentOS 7")
         flavor = nova.flavors.find(name="c1.medium")
-
+        
+        # Create instances list
         instances = []
 
         # Create gateway instance and add floating_ip to it
@@ -188,12 +189,14 @@ if __name__ == "__main__":
         logging.info("Add floating ip ({0}) to {1}".format(floating_ip,
             gateway_instance.name))
         gateway_instance.add_floating_ip(floating_ip)
-
+        
+        # Add gateway to instances list
         instances.append(gateway_instance)
 
         # Create worker instances
         for instance_id in range(1,2):
             worker_instance = nova_servers_create(instance_id)
+            # Add workers to instances list
             instances.append(worker_instance)
 
         # Show ssh client config
