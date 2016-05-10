@@ -55,9 +55,50 @@ def nova_servers_create(instance_id):
     logging.info("Launch an instance {}".format(instance_name))
 
     # cloud config
-    fic = open("cloud-config.txt", "r")
-    userdata = fic.read()
-    fic.close()
+    cloud_config_tpl = '''
+    
+    #cloud-config
+    groups:
+    - docker: [qserv]
+
+    users:
+    - default
+    - name: qserv
+      gecos: Qserv daemon
+      sudo: ALL=(ALL) NOPASSWD:ALL
+      shell: /bin/bash
+      lock-passwd: true
+      ssh-authorized-keys:
+      - {key} 
+    
+    packages:
+    - docker
+    - epel-release
+    
+    runcmd:
+    # nss-mdns is provided by epel-release
+    # so it can not be installed with 'packages' directive
+    - [ "yum", "-y", "install", "nss-mdns" ]
+    - [ "yum", "-y", "update" ]
+    - [ "service", "y", "avahi", "start" ]
+    - [ "hostname", "{hostname}" ]
+    - [ "usermod", "-aG", "docker", "qserv" ]
+    - [ "service", "docker", "start" ]
+
+    manage_etc_hosts: true
+    package_upgrade: true
+    package_reboot_if_required: true
+    timezone: Europe/Paris
+    '''
+
+    fpubkey = open(os.path.expanduser('~/.ssh/id_rsa.pub'))
+    userdata = cloud_config_tpl.format(key=fpubkey.read(),
+                                     hostname=instance_name)
+     
+    logging.debug("cloud config: ")
+    f = open("cloud_config", "w")
+    f.write(userdata)
+    f.close()
 
     # Launch an instance from an image
     instance = nova.servers.create(name=instance_name, image=image,
