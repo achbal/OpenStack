@@ -78,9 +78,9 @@ def nova_servers_create(instance_id):
     runcmd:
     # nss-mdns is provided by epel-release
     # so it can not be installed with 'packages' directive
-    - [ "yum", "-y", "install", "nss-mdns" ]
     - [ "yum", "-y", "update" ]
-    - [ "service", "y", "avahi", "start" ]
+    - [ "yum", "-y", "install", "nss-mdns" ]
+    - [ "service", "avahi-daemon", "start" ]
     - [ "hostname", "{hostname}" ]
     - [ "usermod", "-aG", "docker", "qserv" ]
     - [ "service", "docker", "start" ]
@@ -171,8 +171,8 @@ def print_ssh_config(instances, floating_ip):
     HostName {fixed_ip}
     User qserv
     Port 22
-    UserKnownHostsFile /dev/null
-    StrictHostKeyChecking no
+    StrictHostKeyChecking=no
+    UserKnownHostsFile=/dev/null
     PasswordAuthentication no
     ProxyCommand ssh -W %h:%p qserv@{floating_ip}
     IdentityFile ~/.ssh/id_rsa
