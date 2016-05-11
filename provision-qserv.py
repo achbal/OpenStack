@@ -95,10 +95,7 @@ def nova_servers_create(instance_id):
     userdata = cloud_config_tpl.format(key=fpubkey.read(),
                                      hostname=instance_name)
      
-    logging.debug("cloud config: ")
-    f = open("cloud_config", "w")
-    f.write(userdata)
-    f.close()
+    #logging.debug("cloud-config.txt {}:".format(userdata))
 
     # Launch an instance from an image
     instance = nova.servers.create(name=instance_name, image=image,
@@ -171,8 +168,8 @@ def print_ssh_config(instances, floating_ip):
     HostName {fixed_ip}
     User qserv
     Port 22
-    StrictHostKeyChecking=no
-    UserKnownHostsFile=/dev/null
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
     PasswordAuthentication no
     ProxyCommand ssh -W %h:%p qserv@{floating_ip}
     IdentityFile ~/.ssh/id_rsa
